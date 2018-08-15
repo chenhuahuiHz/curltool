@@ -4,32 +4,23 @@
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include <stdarg.h>
+#include <string>
 
-class sync_curl_req_t
+class easy_curl_req_t
 {
 public:
-    sync_curl_req_t()
-    {
-       m_curl_ptr = curl_easy_init();
-    }
+    easy_curl_req_t();
+    ~easy_curl_req_t();
 
-    CURL *get_curl_handler()
-    {
-        return m_curl_ptr;
-    }
+    CURL *get_curl_handler();
 
-    CURLcode execute()
-    {
-        CURLcode ret = CURLE_FAILED_INIT;
-        if (!m_curl_ptr)
-        {
-            return ret;
-        }
+    CURLcode set_url(const std::string & str_url);
 
-        ret = curl_easy_perform(m_curl_ptr);
-        curl_easy_cleanup(m_curl_ptr);
-        return ret;
-    }
+    CURLcode set_connect_timeout(int timeout_ms);
+
+    CURLcode set_timeout(int timeout_ms);
+
+    CURLcode execute_sync();
 
 private:
     CURL *m_curl_ptr = nullptr;

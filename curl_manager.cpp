@@ -13,7 +13,6 @@ curl_manager_t * curl_manager_t::get_instance()
         if (sg_instance == nullptr)
         {
             sg_instance = new curl_manager_t();
-            curl_global_init(CURL_GLOBAL_ALL);            
         }
     }
     return sg_instance;

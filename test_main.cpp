@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <iostream>
 
 #include "easy_curl.h"
 #include "curl_manager.h"
@@ -24,8 +25,10 @@ int main(int argc, char *argv[])
     
     curl_manager_t::get_instance();
 
-    sync_curl_req_t req;
-    curl_easy_setopt(req.get_curl_handler(), CURLOPT_URL, argv[1]);  
+    easy_curl_req_t req;
+    req.set_url(argv[1]);
+    req.set_connect_timeout(1000);
+    req.set_timeout(1000);
  
 //     if((fp = fopen(argv[2],"w")) == NULL)
 //     {
@@ -35,7 +38,9 @@ int main(int argc, char *argv[])
 //   //CURLOPT_WRITEFUNCTION 将后继的动作交给write_data函数处理
 //     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
 
-    req.execute();
+    int ret = req.execute_sync();
+
+    std::cout << std::endl << "execute result:" << ret << std::endl;
 
     exit(0);
 }

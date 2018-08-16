@@ -4,16 +4,8 @@
 #include <unistd.h>
 #include <iostream>
 
-#include "easy_curl.h"
+#include "curl_req.h"
 #include "curl_manager.h"
-FILE *fp;
-
-// for saving curl data
-// size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream)  
-// {
-//     int written = fwrite(ptr, size, nmemb, (FILE *)fp);
-//     return written;
-// }
  
 int main(int argc, char *argv[])
 {
@@ -22,25 +14,30 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "usage: %s url\n", argv[0]);
 		exit(-1);
     }
-    
-    curl_manager_t::get_instance();
 
-    easy_curl_req_t req;
-    req.set_url(argv[1]);
-    req.set_connect_timeout(1000);
-    req.set_timeout(1000);
- 
-//     if((fp = fopen(argv[2],"w")) == NULL)
-//     {
-//         curl_easy_cleanup(curl);
-//         exit(1);
-//     }
-//   //CURLOPT_WRITEFUNCTION 将后继的动作交给write_data函数处理
-//     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+    try
+    {
+        curl_manager_t::get_instance()->start();
 
-    int ret = req.execute_sync();
+        for (unsigned int i = 0; i < 1000; i++)
+        {
+            auto req = curl_req_t::new_curl_req(i);
+            req.get()->set_url(argv[1]);
+            req.get()->make_default_opts();
+            curl_manager_t::get_instance()->push_curl_req(req);
+        }
+    }
+    catch(std::exception& e)
+    {
+        std::cout << "exception:" << e.what() << std::endl;
+        exit(1);
+    }
 
-    std::cout << std::endl << "execute result:" << ret << std::endl;
+    // nothing in main thread
+    while(1)
+    {
+        sleep(1);
+    }
 
     exit(0);
 }

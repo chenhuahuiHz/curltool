@@ -31,6 +31,7 @@ curl_manager_t::curl_manager_t()
     if (m_multi_handle == nullptr)
     {
         std::cout << "curl_multi_init error!" << std::endl;
+        exit(1);
         return;
     }
 
@@ -121,9 +122,15 @@ void curl_manager_t::execute_all_async()
 {
     std::cout << "[trace] execute_all_async" << std::endl;
 
+    // code according to:
+    // https://curl.haxx.se/libcurl/c/curl_multi_wait.html
+
     int still_running = 0;
     const int CURL_SELECT_TIME = 10;    //10ms for each wait
-    const int MAX_PER_TIME_IN_ONE_POOL = 1000;
+
+    // break conditions: 
+    const int MAX_TIME_IN_ONE_POOL = 1000;
+    const int MAX_NO_FD_REPEAT_TIME = 5;
 
     int repeats = 0;
     int times = 0;
@@ -153,7 +160,7 @@ void curl_manager_t::execute_all_async()
         {
             repeats++; /* count number of repeated zero numfds */
 
-            if (repeats > 5) {
+            if (repeats > MAX_NO_FD_REPEAT_TIME) {
                 break;
             }
             else if (repeats > 1) {
@@ -168,7 +175,7 @@ void curl_manager_t::execute_all_async()
     
         std::cout << "[trace] execute_all_async still_running " << still_running << std::endl;
 
-    } while(still_running && times < MAX_PER_TIME_IN_ONE_POOL);
+    } while(still_running && times < MAX_TIME_IN_ONE_POOL);
     
     std::cout << "[trace] execute_all_async over" << std::endl;
 }
@@ -176,6 +183,7 @@ void curl_manager_t::execute_all_async()
 void curl_manager_t::read_and_clean()
 {
     std::cout << "[trace] read_and_clean" << std::endl;
+
 	CURLMsg * msg = nullptr;
     //  CURLMsg define: https://curl.haxx.se/libcurl/c/curl_multi_info_read.html
     //  struct CURLMsg {

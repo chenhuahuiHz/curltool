@@ -25,6 +25,8 @@ public:
 
     size_t push_curl_req(std::shared_ptr<curl_req_t> req);
 
+    bool is_running(){return m_running;}
+
 private:
     curl_manager_t();
 
@@ -41,6 +43,13 @@ private:
 
     std::recursive_mutex    m_todo_que_lock;
     bool                    m_running = false;
+    bool                    m_need_exit = false;
+
+    // for time test
+public:
+    static std::time_t get_time_stamp();
+    std::time_t     m_time_start;
+    std::time_t     m_time_over;
 };
 
 #endif

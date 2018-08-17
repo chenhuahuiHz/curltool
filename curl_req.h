@@ -9,6 +9,10 @@
 
 typedef size_t(*data_slot_func_t)(void *, size_t, size_t, void *);
 
+/*
+    curl_rsp_t contains the result and data of a curl_req_t,
+    could be achieved in curl_req_t objects.
+*/
 class curl_rsp_t
 {
 public:
@@ -16,21 +20,24 @@ public:
     curl_rsp_t(){}
     ~curl_rsp_t(){}
 
-    void set_rsp_code(const std::string & code)
+    void set_rsp_code(long code)
     {
-        str_rsp_code = code;
+        m_rsp_code = code;
     }
-    void set_curl_code(const std::string & code)
+    void set_curl_code(long code)
     {
-        str_curl_code = code;
+        m_data_result = code;
     }
 
 private:
     char *          m_buf = nullptr;  //for test, we won't write data to buf, only print it
-    std::string     str_rsp_code;
-    std::string     str_curl_code;
+    long            m_rsp_code;
+    long            m_data_result;
 };
 
+/*
+    curl_req_t defines a http req action, and gives the result after req was done.
+*/
 class curl_req_t
 {
     typedef enum 
@@ -48,11 +55,8 @@ public:
     void make_default_opts();
 
     CURLcode set_url(const std::string & str_url);
-
     CURLcode set_connect_timeout(int timeout_ms);
-
     CURLcode set_timeout(int timeout_ms);
-
     CURLcode set_data_slot(data_slot_func_t func, void *func_handler);
 
     CURLcode execute_sync();

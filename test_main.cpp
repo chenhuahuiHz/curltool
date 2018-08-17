@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -17,15 +16,21 @@ int main(int argc, char *argv[])
 
     try
     {
-        curl_manager_t::get_instance()->start();
+        // init env
+        // for time test, we start thread after tasks added
+        curl_manager_t::get_instance();
 
-        for (unsigned int i = 0; i < 1000; i++)
+        // add tasks
+        for (unsigned int i = 0; i < 10000; i++)
         {
             auto req = curl_req_t::new_curl_req(i);
             req.get()->set_url(argv[1]);
             req.get()->make_default_opts();
             curl_manager_t::get_instance()->push_curl_req(req);
         }
+        
+        // start the curl pool thread
+        curl_manager_t::get_instance()->start();
     }
     catch(std::exception& e)
     {

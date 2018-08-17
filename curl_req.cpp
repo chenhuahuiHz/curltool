@@ -50,7 +50,6 @@ CURLcode curl_req_t::set_timeout(int timeout_ms)
 
 CURLcode curl_req_t::set_data_slot(data_slot_func_t func, void *func_handler)
 {
-    //return CURLE_FAILED_INIT;
     if (!m_curl_ptr)
         return CURLE_FAILED_INIT;
 
@@ -81,8 +80,11 @@ int curl_req_t::detach_multi_handler(CURLM *handler)
 
 void curl_req_t::make_default_opts()
 {
-    set_connect_timeout(10000);
-    set_timeout(10000);
+    const int CURL_CON_TIME_OUT = 60000;    //1 minute
+    const int CURL_TIME_OUT = 60000;    //1 minute
+
+    set_connect_timeout(CURL_CON_TIME_OUT);
+    set_timeout(CURL_TIME_OUT);
     set_data_slot(curl_rsp_t::write_rsp_data_func, &m_rsp);
 }
 

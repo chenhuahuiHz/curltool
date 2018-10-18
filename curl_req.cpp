@@ -1,11 +1,13 @@
 
 #include <iostream>
 #include "curl_req.h"
+#include "curl_manager.h"
 
 
 curl_req_t::curl_req_t(unsigned int req_id) : m_req_id(req_id)
 {
     m_curl_ptr = curl_easy_init();
+    m_tm_start = curl_manager_t::get_time_stamp();
 }
 
 std::shared_ptr<curl_req_t> curl_req_t::new_curl_req(unsigned int req_id)

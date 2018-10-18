@@ -14,6 +14,7 @@ int main(int argc, char *argv[])
 		exit(-1);
     }
 
+    unsigned int reqid = 0;
     try
     {
         // start the curl pool thread
@@ -22,7 +23,7 @@ int main(int argc, char *argv[])
         // add tasks
         for (unsigned int i = 0; i < 100; i++)
         {
-            auto req = curl_req_t::new_curl_req(i);
+            auto req = curl_req_t::new_curl_req(reqid++);
             req.get()->set_url(argv[1]);
             req.get()->make_default_opts();
             curl_manager_t::get_instance()->push_curl_req(req);
@@ -35,9 +36,22 @@ int main(int argc, char *argv[])
     }
 
     // nothing in main thread
+    int addcnt = 0;
     while(1)
     {
         sleep(1);
+        if (addcnt < 10) 
+        {
+            // add tasks
+            for (unsigned int i = 0; i < 200; i++)
+            {
+                auto req = curl_req_t::new_curl_req(reqid++);
+                req.get()->set_url(argv[1]);
+                req.get()->make_default_opts();
+                curl_manager_t::get_instance()->push_curl_req(req);
+            } 
+            addcnt++;
+        }    
     }
 
     exit(0);

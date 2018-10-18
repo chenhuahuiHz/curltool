@@ -1,11 +1,12 @@
-#ifndef EASY_CURL_H_
-#define EASY_CURL_H_
+#ifndef CURL_REQ_H_
+#define CURL_REQ_H_
 
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include <stdarg.h>
 #include <string>
 #include <memory>
+#include <ctime>
 
 typedef size_t(*data_slot_func_t)(void *, size_t, size_t, void *);
 
@@ -76,8 +77,9 @@ private:
     EN_CURL_TYPE    m_type = EN_CURL_TYPE_GET;
     unsigned int    m_req_id = 0;
     curl_rsp_t      m_rsp;
+
+public:
+    std::time_t          m_tm_start;
 };
-
-
 
 #endif

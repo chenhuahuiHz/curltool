@@ -117,7 +117,7 @@ bool curl_manager_t::add_todo_to_doing()
     //std::cout << "[trace] add_todo_to_doing over" << std::endl;
     return !m_curl_req_doing_map.empty();
 }
-
+#if 0
 void curl_manager_t::execute_all_async()
 {
     std::cout << "[trace] execute_all_async" << std::endl;
@@ -129,7 +129,7 @@ void curl_manager_t::execute_all_async()
     const int CURL_SELECT_TIME = 10;    //10ms for each wait
 
     // break conditions: 
-    const int MAX_TIME_IN_ONE_POOL = 1000;
+    const int MAX_TIME_IN_ONE_POOL = 100;
     const int MAX_NO_FD_REPEAT_TIME = 5;
 
     int repeats = 0;
@@ -147,7 +147,6 @@ void curl_manager_t::execute_all_async()
         
         if(mc != CURLM_OK) {
             std::cout << "[trace] execute_all_async curl_multi failed, code " << mc << std::endl;
-            fprintf(stderr, "curl_multi failed, code %d.n", mc);
             break;
         }
         
@@ -179,6 +178,67 @@ void curl_manager_t::execute_all_async()
     
     std::cout << "[trace] execute_all_async over" << std::endl;
 }
+#else
+
+const int SELECT_TIMEOUT_TIMES = 5;
+const int SELECT_TIMES = 10;
+static const int SELECT_TIMEOUT = 10;
+void curl_manager_t::execute_all_async()
+{
+    std::cout << "[trace] execute_all_async" << std::endl;
+
+
+	CURLMcode     resultMulti;
+	int           nCountOfEasyHandlesRun = -1;
+	int           numfds = 0;
+	int           nSelectTimeoutTimes = 0;
+	int           nSelectTimes = 0;
+
+    std::cout << "[trace] curl_multi_perform while begin" << std::endl;
+    unsigned int loopc = 0;
+    std::time_t b = get_time_stamp();
+	do
+	{
+		resultMulti = curl_multi_perform(m_multi_handle, &nCountOfEasyHandlesRun);
+        loopc++;
+	} while (CURLM_CALL_MULTI_PERFORM == resultMulti);
+    std::cout << "[trace] curl_multi_perform while over:" << loopc << ", cost time:" << get_time_stamp()-b << std::endl;
+
+   
+	while (nCountOfEasyHandlesRun > 0
+		&& nSelectTimes < SELECT_TIMES
+		&& nSelectTimeoutTimes < SELECT_TIMEOUT_TIMES)
+	{
+
+		if (curl_multi_wait(m_multi_handle, NULL, 0, SELECT_TIMEOUT, &numfds) != CURLM_OK)
+		{
+			std::cout << ("HttpAgent::PerformTransfer, curl_multi_wait fail\n");
+			return;
+		}
+		nSelectTimes++;
+		if (!numfds)
+		{
+			nSelectTimeoutTimes++; /* count number of repeated zero numfds */
+			if (nSelectTimeoutTimes == SELECT_TIMEOUT_TIMES - 1)
+				usleep(100);
+		}
+		else
+		{
+			nSelectTimeoutTimes = 0;
+			do
+			{
+				resultMulti = curl_multi_perform(m_multi_handle, &nCountOfEasyHandlesRun);
+
+			} while (CURLM_CALL_MULTI_PERFORM == resultMulti);
+
+			if (nSelectTimes % 10 == 0) //reduce log;
+				std::cout << "HttpAgent::PerformTransfer after one while, nCountOfEasyHandlesRun=" << nCountOfEasyHandlesRun << ",nSelectTimes=" << nSelectTimes << ", nSelectTimeoutTimes=" << nSelectTimeoutTimes << std::endl;
+		}
+	}
+    
+    std::cout << "[trace] execute_all_async over" << std::endl;
+}
+#endif
 
 void curl_manager_t::read_and_clean()
 {
@@ -224,14 +284,18 @@ void curl_manager_t::read_and_clean()
                 m_curl_req_doing_map.erase(iter);
 
                 // todo: post resut to business thread
-			    std::cout << "req:" << req_ptr->req_id() 
-                    << " rsp_code:" << rsp_code 
-                    << ", data_result:" << data_result 
-                    << " todo.size " << m_curl_req_todo_que.size() 
-                    << ", doing.size " << m_curl_req_doing_map.size() 
-                    << std::endl;
-                fin_count++;
+                // time_t now = time(NULL);
+			    // std::cout << "[" << now << "] req:" << req_ptr->req_id() 
+                //     << " rsp_code:" << rsp_code 
+                //     << ", data_result:" << data_result 
+                //     << " todo.size " << m_curl_req_todo_que.size() 
+                //     << ", doing.size " << m_curl_req_doing_map.size() 
+                //     << "|" << get_time_stamp() - req_ptr->m_tm_start
+                //     << std::endl;
+                
+                std::cout << "HTEST: " << req_ptr->req_id() << "," << get_time_stamp() - req_ptr->m_tm_start << "," << m_curl_req_doing_map.size() << std::endl;
 
+                fin_count++;
                 if (m_curl_req_todo_que.empty() && m_curl_req_doing_map.empty())
                 {
                     m_time_over = get_time_stamp();

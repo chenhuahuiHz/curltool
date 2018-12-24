@@ -117,68 +117,6 @@ bool curl_manager_t::add_todo_to_doing()
     //std::cout << "[trace] add_todo_to_doing over" << std::endl;
     return !m_curl_req_doing_map.empty();
 }
-#if 0
-void curl_manager_t::execute_all_async()
-{
-    std::cout << "[trace] execute_all_async" << std::endl;
-
-    // code according to:
-    // https://curl.haxx.se/libcurl/c/curl_multi_wait.html
-
-    int still_running = 0;
-    const int CURL_SELECT_TIME = 10;    //10ms for each wait
-
-    // break conditions: 
-    const int MAX_TIME_IN_ONE_POOL = 100;
-    const int MAX_NO_FD_REPEAT_TIME = 5;
-
-    int repeats = 0;
-    int times = 0;
-    do {
-        CURLMcode mc;
-        int numfds;
-        
-        mc = curl_multi_perform(m_multi_handle, &still_running);
-        
-        if(mc == CURLM_OK ) {
-            /* wait for activity, timeout or "nothing" */
-            mc = curl_multi_wait(m_multi_handle, NULL, 0, CURL_SELECT_TIME, &numfds);
-        }
-        
-        if(mc != CURLM_OK) {
-            std::cout << "[trace] execute_all_async curl_multi failed, code " << mc << std::endl;
-            break;
-        }
-        
-        /* 'numfds' being zero means either a timeout or no file descriptors to
-            wait for. Try timeout on first occurrence, then assume no file
-            descriptors and no file descriptors to wait for means wait for 10
-            milliseconds. */
-        
-        if (!numfds)
-        {
-            repeats++; /* count number of repeated zero numfds */
-
-            if (repeats > MAX_NO_FD_REPEAT_TIME) {
-                break;
-            }
-            else if (repeats > 1) {
-                std::cout << "[trace] execute_all_async usleep" << std::endl;
-                usleep(10000); /* sleep 10 milliseconds */
-            }
-        }
-        else
-            repeats = 0;
-
-        times++;
-    
-        std::cout << "[trace] execute_all_async still_running " << still_running << std::endl;
-
-    } while(still_running && times < MAX_TIME_IN_ONE_POOL);
-    
-    std::cout << "[trace] execute_all_async over" << std::endl;
-}
-#else
 
 const int SELECT_TIMEOUT_TIMES = 5;
 const int SELECT_TIMES = 10;
@@ -187,24 +125,14 @@ void curl_manager_t::execute_all_async()
 {
     std::cout << "[trace] execute_all_async" << std::endl;
 
-
-	CURLMcode     resultMulti;
 	int           nCountOfEasyHandlesRun = -1;
 	int           numfds = 0;
 	int           nSelectTimeoutTimes = 0;
 	int           nSelectTimes = 0;
 
     std::cout << "[trace] curl_multi_perform while begin" << std::endl;
-    unsigned int loopc = 0;
-    std::time_t b = get_time_stamp();
-	do
-	{
-		resultMulti = curl_multi_perform(m_multi_handle, &nCountOfEasyHandlesRun);
-        loopc++;
-	} while (CURLM_CALL_MULTI_PERFORM == resultMulti);
-    std::cout << "[trace] curl_multi_perform while over:" << loopc << ", cost time:" << get_time_stamp()-b << std::endl;
-
-   
+    
+	curl_multi_perform(m_multi_handle, &nCountOfEasyHandlesRun);   
 	while (nCountOfEasyHandlesRun > 0
 		&& nSelectTimes < SELECT_TIMES
 		&& nSelectTimeoutTimes < SELECT_TIMEOUT_TIMES)
@@ -225,12 +153,7 @@ void curl_manager_t::execute_all_async()
 		else
 		{
 			nSelectTimeoutTimes = 0;
-			do
-			{
-				resultMulti = curl_multi_perform(m_multi_handle, &nCountOfEasyHandlesRun);
-
-			} while (CURLM_CALL_MULTI_PERFORM == resultMulti);
-
+			curl_multi_perform(m_multi_handle, &nCountOfEasyHandlesRun);
 			if (nSelectTimes % 10 == 0) //reduce log;
 				std::cout << "HttpAgent::PerformTransfer after one while, nCountOfEasyHandlesRun=" << nCountOfEasyHandlesRun << ",nSelectTimes=" << nSelectTimes << ", nSelectTimeoutTimes=" << nSelectTimeoutTimes << std::endl;
 		}
@@ -238,7 +161,6 @@ void curl_manager_t::execute_all_async()
     
     std::cout << "[trace] execute_all_async over" << std::endl;
 }
-#endif
 
 void curl_manager_t::read_and_clean()
 {
@@ -293,7 +215,9 @@ void curl_manager_t::read_and_clean()
                 //     << "|" << get_time_stamp() - req_ptr->m_tm_start
                 //     << std::endl;
                 
-                std::cout << "HTEST: " << req_ptr->req_id() << "," << get_time_stamp() - req_ptr->m_tm_start << "," << m_curl_req_doing_map.size() << std::endl;
+                std::cout << "HTEST: id[" << req_ptr->req_id() << "], cost(" << get_time_stamp() - req_ptr->m_tm_start << "ms),"
+                      << " rsp_code(" << rsp_code 
+                    << "), data_result(" << data_result  << ")" << std::endl;
 
                 fin_count++;
                 if (m_curl_req_todo_que.empty() && m_curl_req_doing_map.empty())

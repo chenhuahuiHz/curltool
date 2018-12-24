@@ -82,7 +82,7 @@ int curl_req_t::detach_multi_handler(CURLM *handler)
 
 void curl_req_t::make_default_opts()
 {
-    const int CURL_CON_TIME_OUT = 60000;    //1 minute
+    const int CURL_CON_TIME_OUT = 30000;    //1 minute
     const int CURL_TIME_OUT = 60000;    //1 minute
 
     set_connect_timeout(CURL_CON_TIME_OUT);
